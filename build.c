@@ -4,6 +4,8 @@
 #include <string.h>
 #include <conio2.h>
 
+#include "./TAD/arvore.h"
+
 ListaReg *buscaPalavraEmTabela(ListaReg *tabela, char *palavra)
 {
     ListaReg *atual = tabela;
@@ -25,6 +27,7 @@ void inserePalavraNaTabela(ListaReg **tabela, char *palavra) {
     ListaReg *novoReg, *aux;
 
     novoReg = (ListaReg*)malloc(sizeof(novoReg));
+    novoReg->reg = (Reg*)malloc(sizeof(Reg));
     strcpy(novoReg->reg->palavra, palavra);
     novoReg->freq = 1;
     novoReg->prox = NULL;
@@ -33,7 +36,7 @@ void inserePalavraNaTabela(ListaReg **tabela, char *palavra) {
         *tabela = novoReg;
     else {
         aux = *tabela;
-        while (aux != NULL) {
+        while (aux->prox != NULL) {
             aux = aux->prox;
         }
         aux->prox = novoReg;
@@ -41,47 +44,48 @@ void inserePalavraNaTabela(ListaReg **tabela, char *palavra) {
     
 }
 
-void separaPalavraNaTabela(ListaReg **tabela, char *text)
-{
-    char palavra[50] = "";
+void separaNaTabela(ListaReg **tabela, char *text) {
+    char palavra[300] = "";
     int TL = 0, i;
     ListaReg *existe = NULL;
-    
-    for (i = 0; text[i] != '\0'; i++)
-    {
-        if (text[i] != ' ' && text[i] != '\n')
+
+    for (i = 0; text[i] != '\0'; i++) {
+        if (text[i] != ' ' && text[i] != '\n') {
             palavra[TL++] = text[i];
-        else
-        {
+        } else {
             palavra[TL] = '\0';
-            if (strlen(palavra) > 0)
-            {
+            if (strlen(palavra) > 0) {
                 existe = buscaPalavraEmTabela(*tabela, palavra);
-                if (existe == NULL)
+                if (existe == NULL) {
                     inserePalavraNaTabela(tabela, palavra);
-                else
+                } else {
                     aumentaFrequencia(existe);
+                }
             }
             TL = 0;
 
             existe = buscaPalavraEmTabela(*tabela, " ");
-            if (existe == NULL)
+            if (existe == NULL) {
                 inserePalavraNaTabela(tabela, " ");
-            else
+            } else {
                 aumentaFrequencia(existe);
+            }
+            printf("%s", palavra);
         }
     }
 
-    if (TL > 0)
-    {
+    if (TL > 0) {
         palavra[TL] = '\0';
-        *existe = buscaPalavraEmTabela(*tabela, palavra);
-        if (existe == NULL)
+        existe = buscaPalavraEmTabela(*tabela, palavra);
+        if (existe == NULL) {
             inserePalavraNaTabela(tabela, palavra);
-        else
+        } else {
             aumentaFrequencia(existe);
+        }
     }
 }
+
+
 
 void insereSimboloNaTabela(ListaReg *tabela) {
     int i = 1;
@@ -92,15 +96,28 @@ void insereSimboloNaTabela(ListaReg *tabela) {
     }
 }
 
+void printTabela(ListaReg *tabela) {
+    printf("Simbolo\t\tPalavra\t\tFrequencia\n");
+    while(tabela != NULL) {
+        printf("%c\t\t%s\t\t%d\n", tabela->reg->simbolo, tabela->reg->palavra, tabela->freq);
+        tabela = tabela->prox;
+    }
+}
+
 int main() {
     char text[1000];
     FILE *file = fopen("text.txt", "r");
     ListaReg *tabela = NULL;
 
     while (fgets(text, sizeof(text), file) != NULL) {
-        separaPalavraNaTabela(&tabela, text);
+        separaNaTabela(&tabela, text);
     }
-
+	
     insereSimboloNaTabela(tabela);
+    
+    //teste
+    printTabela(tabela);
 
+    fclose(file);
+    return 0;
 }
