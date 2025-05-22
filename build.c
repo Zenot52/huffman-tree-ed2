@@ -26,7 +26,7 @@ void aumentaFrequencia(ListaReg *registro)
 void inserePalavraNaTabela(ListaReg **tabela, char *palavra) {
     ListaReg *novoReg, *aux;
 
-    novoReg = (ListaReg*)malloc(sizeof(novoReg));
+    novoReg = (ListaReg*)malloc(sizeof(ListaReg));
     novoReg->reg = (Reg*)malloc(sizeof(Reg));
     strcpy(novoReg->reg->palavra, palavra);
     novoReg->freq = 1;
@@ -53,24 +53,25 @@ void separaNaTabela(ListaReg **tabela, char *text) {
         if (text[i] != ' ' && text[i] != '\n') {
             palavra[TL++] = text[i];
         } else {
-            palavra[TL] = '\0';
-            if (strlen(palavra) > 0) {
+            if (TL > 0) {
+                palavra[TL] = '\0';
                 existe = buscaPalavraEmTabela(*tabela, palavra);
                 if (existe == NULL) {
                     inserePalavraNaTabela(tabela, palavra);
                 } else {
                     aumentaFrequencia(existe);
                 }
+                TL = 0;
             }
-            TL = 0;
 
-            existe = buscaPalavraEmTabela(*tabela, " ");
-            if (existe == NULL) {
-                inserePalavraNaTabela(tabela, " ");
-            } else {
-                aumentaFrequencia(existe);
+            if (text[i] == ' ') {
+                existe = buscaPalavraEmTabela(*tabela, " ");
+                if (existe == NULL) {
+                    inserePalavraNaTabela(tabela, " ");
+                } else {
+                    aumentaFrequencia(existe);
+                }
             }
-            printf("%s", palavra);
         }
     }
 
@@ -97,25 +98,140 @@ void insereSimboloNaTabela(ListaReg *tabela) {
 }
 
 void printTabela(ListaReg *tabela) {
-    printf("Simbolo\t\tPalavra\t\tFrequencia\n");
-    while(tabela != NULL) {
-        printf("%c\t\t%s\t\t%d\n", tabela->reg->simbolo, tabela->reg->palavra, tabela->freq);
+    int linha = 1;
+    int colSimbolo = 2;
+    int colPalavra = 12;
+    int colFrequencia = 40;
+
+    clrscr();
+
+    gotoxy(colSimbolo, linha++);
+    printf("Simbolo");
+    gotoxy(colPalavra, linha - 1);
+    printf("Palavra");
+    gotoxy(colFrequencia, linha - 1);
+    printf("Frequencia");
+
+    linha++;
+
+    while (tabela != NULL) {
+        gotoxy(colSimbolo, linha);
+        printf("%d", tabela->reg->simbolo);
+        gotoxy(colPalavra, linha);
+        printf("%s", tabela->reg->palavra);
+        gotoxy(colFrequencia, linha);
+        printf("%d", tabela->freq);
         tabela = tabela->prox;
+        linha++;
     }
 }
+
+ListaArvh *criaFloresta(ListaReg *tabela){
+    ListaArvh *L = NULL, *nb, *auxL, *ant;
+    ListaReg *auxtabela = tabela;
+    while (auxtabela != NULL) {
+        nb = criaBlocoLista(auxtabela->reg->simbolo,auxtabela->freq);
+        if(L == NULL)
+            L = nb;
+        else{
+            if(L->Arvh->freq > auxtabela->freq) {
+                nb->prox = L;
+                L = nb;                
+            } else {
+                auxL = L->prox;
+                ant = L;
+                while(auxL != NULL && auxL->Arvh->freq < nb->Arvh->freq){
+                    ant = auxL;
+                    auxL = auxL->prox;
+                }
+                if(auxL == NULL){
+                    ant->prox = nb;
+                }else{
+                    nb->prox = auxL;
+                    ant->prox = nb;
+                }
+            }
+        }
+        auxtabela = auxtabela->prox;
+    }
+    return L;
+}
+
+ListaArvh *criaNovoNoAvrh(ListaArvh *atual, ListaArvh *atualprox) {
+    ListaArvh *nb = (ListaArvh *)malloc(sizeof(ListaArvh));
+    nb->prox = NULL;
+    nb->Arvh = (Arvh *)malloc(sizeof(Arvh));
+    nb->Arvh->esq = atual->Arvh;
+    nb->Arvh->dir = atualprox->Arvh;
+    nb->Arvh->simbolo = -1;
+    nb->Arvh->freq = atual->Arvh->freq + atualprox->Arvh->freq;
+    return nb;
+}
+
+void insereFloresta(ListaArvh **L, ListaArvh *nb) {
+    ListaArvh *aux, *ant;
+	
+	if(*L == NULL) {
+		*L = nb;
+	}
+	else {
+		if(nb->Arvh->freq < (*L)->Arvh->freq) {
+	        nb->prox = *L;
+	        *L = nb;
+    	}
+	    else {
+	        aux = (*L)->prox;
+	        ant = *L;
+	        while(aux != NULL && nb->Arvh->freq > aux->Arvh->freq) {
+	            ant = aux;
+	            aux = aux->prox;
+	        }
+	
+	        if(aux != NULL) {
+	            nb->prox = aux;
+	            ant->prox = nb;
+	        }   
+	        else {
+	            ant->prox = nb;
+	        }
+	    }
+	}
+}
+
+void geraArvore(ListaArvh **L) {
+    ListaArvh *nb, *atual, *atualprox;
+
+    while((*L)->prox != NULL) {
+        atual = *L;
+        atualprox = (*L)->prox;
+        
+        *L = atualprox->prox;
+
+        nb = criaNovoNoAvrh(atual, atualprox);
+        
+        free(atual);
+        free(atualprox);
+    
+        insereFloresta(L, nb);
+    }
+}
+
 
 int main() {
     char text[1000];
     FILE *file = fopen("text.txt", "r");
     ListaReg *tabela = NULL;
-
+    ListaArvh *L= NULL;
     while (fgets(text, sizeof(text), file) != NULL) {
         separaNaTabela(&tabela, text);
     }
 	
     insereSimboloNaTabela(tabela);
+   
+    L = criaFloresta(tabela);
+
+    geraArvore(&L);
     
-    //teste
     printTabela(tabela);
 
     fclose(file);
