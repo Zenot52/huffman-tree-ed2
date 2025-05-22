@@ -101,7 +101,8 @@ void printTabela(ListaReg *tabela) {
     int linha = 1;
     int colSimbolo = 2;
     int colPalavra = 12;
-    int colFrequencia = 40;
+    int colFrequencia = 30;
+    int colCod = 45;
 
     clrscr();
 
@@ -111,6 +112,8 @@ void printTabela(ListaReg *tabela) {
     printf("Palavra");
     gotoxy(colFrequencia, linha - 1);
     printf("Frequencia");
+	gotoxy(colCod, linha - 1);
+    printf("Codigo Huffman");
 
     linha++;
 
@@ -121,6 +124,8 @@ void printTabela(ListaReg *tabela) {
         printf("%s", tabela->reg->palavra);
         gotoxy(colFrequencia, linha);
         printf("%d", tabela->freq);
+        gotoxy(colCod, linha);
+        printf("%s", tabela->reg->codHuffman);
         tabela = tabela->prox;
         linha++;
     }
@@ -216,13 +221,70 @@ void geraArvore(ListaArvh **L) {
     }
 }
 
+inserirCod(ListaReg *tabela, int simbol, char *cod){
+    while(tabela != NULL && tabela->reg->simbolo != simbol){
+        tabela = tabela->prox;
+    }
+    if(tabela != NULL){
+        strcpy(tabela->reg->codHuffman,cod);
+    }
+}
+
+void setCodHuffman(Arvh *raiz, ListaReg *tabela, char *cod, int TL)
+{
+    if (raiz != NULL)
+    {
+        if (raiz->simbolo != -1)
+        {
+            cod[TL] = '\0';
+            inserirCod(tabela, raiz->simbolo, cod);
+        }
+        else
+        {
+            cod[TL] = '0';
+            setCodHuffman(raiz->esq, tabela, cod, TL + 1);
+            cod[TL] = '1';
+            setCodHuffman(raiz->dir, tabela, cod, TL + 1);
+        }
+    }
+}
+
+void codificarFrase(ListaReg *tabela, char *frase, FILE *arquivo) {
+	ListaReg *existe = NULL;
+	char palavra[300] = "";
+	int vetBin[1000], i, j, TL = 0, TLvet = 0;
+	
+	for(i = 0; frase[i] != '\0'; i++) {
+		if(frase[i] == ' ' && frase[i] != '\n')
+			palavra[TL++] = frase[i];
+		else {
+			if(TL > 0) {
+				palavra[TL] = '\0';
+				existe = buscaPalavraEmTabela(tabela, palavra);
+				if(existe != NULL) {
+					j = 0;
+					while(j < strlen(existe->reg->codHuffman)) {
+						vetBin[TLvet] = existe->reg->codHuffman[j] - '0';
+						TLvet++;
+						j++;
+					}
+				}
+			}
+			TL = 0;
+			//PRECISA ACABAR AQUI!!!
+		}
+	}
+}
 
 int main() {
-    char text[1000];
-    FILE *file = fopen("text.txt", "r");
-    ListaReg *tabela = NULL;
+	ListaReg *tabela = NULL;
     ListaArvh *L= NULL;
-    while (fgets(text, sizeof(text), file) != NULL) {
+    FILE *dataFile = fopen("text.txt", "r");
+    FILE *baseFile = fopen("phrase.txt", "r");
+    FILE *encodedFile = fopen("outCode.dat", "wb");
+    char text[1000], frase[1000], straux[30];
+    
+    while (fgets(text, sizeof(text), dataFile) != NULL) {
         separaNaTabela(&tabela, text);
     }
 	
@@ -231,9 +293,20 @@ int main() {
     L = criaFloresta(tabela);
 
     geraArvore(&L);
+
+    straux[0] = '\0';
+    setCodHuffman(L->Arvh, tabela, straux, 0);
+    
+    while (fgets(frase, sizeof(frase), baseFile) != NULL) {
+        codificarFrase(tabela, frase, encodedFile);
+    }
+    
+    
     
     printTabela(tabela);
 
-    fclose(file);
+	fclose(encodedFile);
+	fclose(baseFile);
+    fclose(dataFile);
     return 0;
 }
