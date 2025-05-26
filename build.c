@@ -131,14 +131,16 @@ void printTabela(ListaReg *tabela) {
     }
 }
 
-void printArvore(ListaArvh *L, int n) {
+void printArvore(Arvh *nodo, int n) {
     int i;
-    if (L != NULL) {
-        printArvore(L->Arvh->dir, n+1);
-        for (i = 0; i < 5*n; i++)
+    if (nodo != NULL) {
+    	
+        printArvore(nodo->dir, n+1);
+        for (i = 0; i < 8*n; i++)
             printf(" ");
-        printf("(%d, %d)\n", L->Arvh->simbolo, L->Arvh->freq);
-        printArvore(L->Arvh->esq, n-1);
+        textcolor(n+2);
+        printf("(%d, %d)\n", nodo->simbolo, nodo->freq);
+        printArvore(nodo->esq, n+1);
     }
 }
 
@@ -366,7 +368,7 @@ int main() {
     FILE *baseFile = fopen("phrase.txt", "r");
     FILE *encodedFile = fopen("outCode.dat", "wb");
     FILE *recordFile = fopen("record.dat", "wb");
-    char text[1000], frase[1000], straux[30];
+    char text[1000], frase[1000], straux[50];
     
     while (fgets(text, sizeof(text), dataFile) != NULL) {
         separaNaTabela(&tabela, text);
@@ -385,11 +387,11 @@ int main() {
         codificarFrase(tabela, frase, encodedFile);
     }
     
-    //gravaRegistro(tabela, recordFile);
+    gravaRegistro(tabela, recordFile);
     
     printTabela(tabela);
     printf("\n\n\n\n\n");
-    printArvore(L, 0);
+    printArvore(L->Arvh, 0);
 
     fclose(recordFile);
 	fclose(encodedFile);

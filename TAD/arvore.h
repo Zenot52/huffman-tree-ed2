@@ -23,7 +23,7 @@ struct Bits
 
 struct Registro{
     char simbolo;
-    char codHuffman[20];
+    char codHuffman[50];
     char palavra[50];
 }; typedef struct Registro Reg;
 
