@@ -131,6 +131,17 @@ void printTabela(ListaReg *tabela) {
     }
 }
 
+void printArvore(ListaArvh *L, int n) {
+    int i;
+    if (L != NULL) {
+        printArvore(L->Arvh->dir, n+1);
+        for (i = 0; i < 5*n; i++)
+            printf(" ");
+        printf("(%d, %d)\n", L->Arvh->simbolo, L->Arvh->freq);
+        printArvore(L->Arvh->esq, n-1);
+    }
+}
+
 ListaArvh *criaFloresta(ListaReg *tabela){
     ListaArvh *L = NULL, *nb, *auxL, *ant;
     ListaReg *auxtabela = tabela;
@@ -206,7 +217,7 @@ void insereFloresta(ListaArvh **L, ListaArvh *nb) {
 void geraArvore(ListaArvh **L) {
     ListaArvh *nb, *atual, *atualprox;
 
-    while((*L)->prox != NULL) {
+    while((*L) != NULL && (*L)->prox != NULL) {
         atual = *L;
         atualprox = (*L)->prox;
         
@@ -253,7 +264,7 @@ void codificarFrase(ListaReg *tabela, char *frase, FILE *arquivo) {
 	ListaReg *existe = NULL;
 	char palavra[300] = "";
 	int vetBin[1000], i, j, TL = 0, TLvet = 0;
-	
+	bits Byte;
 	for(i = 0; frase[i] != '\0'; i++) {
 		if(frase[i] == ' ' && frase[i] != '\n')
 			palavra[TL++] = frase[i];
@@ -271,9 +282,81 @@ void codificarFrase(ListaReg *tabela, char *frase, FILE *arquivo) {
 				}
 			}
 			TL = 0;
-			//PRECISA ACABAR AQUI!!!
+			vetBin[TLvet] = 0;//adicionando espaÃ§o manualmente
+            TLvet++;
+
 		}
 	}
+    if(TL > 0) {
+		palavra[TL] = '\0';
+		existe = buscaPalavraEmTabela(tabela, palavra);
+		if(existe != NULL) {
+			j = 0;
+			while(j < strlen(existe->reg->codHuffman)) {
+				vetBin[TLvet] = existe->reg->codHuffman[j] - '0';
+				TLvet++;
+				j++;
+			}
+		}
+	}
+
+    i = 0;
+    while (i < TLvet) {
+        if (i < TLvet)
+            Byte.b0 = vetBin[i];
+        else
+            Byte.b0 = 0;
+
+        if (i + 1 < TLvet)
+            Byte.b1 = vetBin[i + 1];
+        else
+            Byte.b1 = 0;
+
+        if (i + 2 < TLvet)
+            Byte.b2 = vetBin[i + 2];
+        else
+            Byte.b2 = 0;
+
+        if (i + 3 < TLvet)
+            Byte.b3 = vetBin[i + 3];
+        else
+            Byte.b3 = 0;
+
+        if (i + 4 < TLvet)
+            Byte.b4 = vetBin[i + 4];
+        else
+            Byte.b4 = 0;
+
+        if (i + 5 < TLvet)
+            Byte.b5 = vetBin[i + 5];
+        else
+            Byte.b5 = 0;
+
+        if (i + 6 < TLvet)
+            Byte.b6 = vetBin[i + 6];
+        else
+            Byte.b6 = 0;
+
+        if (i + 7 < TLvet)
+            Byte.b7 = vetBin[i + 7];
+        else
+            Byte.b7 = 0;
+
+        fwrite(&Byte, sizeof(Byte), 1, arquivo);
+
+        i += 8;
+    }
+}
+
+void gravaRegistro(ListaReg *tabela, FILE *arquivo) {
+    Reg *aux;
+
+    while (tabela != NULL) {
+        aux = tabela->reg;
+        fwrite(aux, sizeof(Reg), 1, arquivo);
+        tabela = tabela->prox;
+    }
+
 }
 
 int main() {
@@ -282,6 +365,7 @@ int main() {
     FILE *dataFile = fopen("text.txt", "r");
     FILE *baseFile = fopen("phrase.txt", "r");
     FILE *encodedFile = fopen("outCode.dat", "wb");
+    FILE *recordFile = fopen("record.dat", "wb");
     char text[1000], frase[1000], straux[30];
     
     while (fgets(text, sizeof(text), dataFile) != NULL) {
@@ -301,10 +385,13 @@ int main() {
         codificarFrase(tabela, frase, encodedFile);
     }
     
-    
+    //gravaRegistro(tabela, recordFile);
     
     printTabela(tabela);
+    printf("\n\n\n\n\n");
+    printArvore(L, 0);
 
+    fclose(recordFile);
 	fclose(encodedFile);
 	fclose(baseFile);
     fclose(dataFile);
