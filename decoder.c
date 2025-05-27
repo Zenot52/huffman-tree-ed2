@@ -50,15 +50,14 @@ void decode(Arvh *raiz, FILE *recordFile){
 	FILE *encodedFile = fopen("outCode.dat", "rb");
     Arvh *aux = raiz;
     unsigned char byte;
-    char bit;
-    int i;
+    int i,bit;
     Reg registro;
     printf("Frase decodificada: ");
     while(fread(&byte, sizeof(byte), 1, encodedFile)){
         for (i = 7; i >= 0; i--)
         {
-            bit = (byte >> i) & 1; // pega a comparacao (AND bit a bit) entre o deslocamento do bit na pos i e 1 (sempre resultando no valor do bit i)
-            if (bit == 0)
+            bit = (byte >> i) & 1;
+			if (bit == 0)
                 aux = aux->esq;
             else
                 aux = aux->dir;

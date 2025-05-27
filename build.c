@@ -264,43 +264,39 @@ void setCodHuffman(Arvh *raiz, ListaReg *tabela, char *cod, int TL)
 
 void codificarFrase(ListaReg *tabela, char *frase, FILE *arquivo) {
 	ListaReg *existe = NULL;
-	char palavra[300] = "";
-	int vetBin[1000], i, j, TL = 0, TLvet = 0;
-	bits Byte;
-	for(i = 0; frase[i] != '\0'; i++) {
-		if(frase[i] == ' ' && frase[i] != '\n')
-			palavra[TL++] = frase[i];
-		else {
-			if(TL > 0) {
-				palavra[TL] = '\0';
-				existe = buscaPalavraEmTabela(tabela, palavra);
-				if(existe != NULL) {
-					j = 0;
-					while(j < strlen(existe->reg->codHuffman)) {
-						vetBin[TLvet] = existe->reg->codHuffman[j] - '0';
-						TLvet++;
-						j++;
-					}
-				}
-			}
-			TL = 0;
-			vetBin[TLvet] = 0;//adicionando espaÃ§o manualmente
-            TLvet++;
+    char palavra[300] = "";
+    int vetBin[10000], TL = 0, TLvet = 0;
+    bits Byte;
+    int i = 0, j;
 
-		}
-	}
+    while(frase[i]!= '\0') {
+        if(frase[i] != ' ' && frase[i]!= '\n') {
+            palavra[TL++] =frase[i];
+        }else{
+            if(TL > 0) {
+                palavra[TL] = '\0';
+                existe= buscaPalavraEmTabela(tabela, palavra);
+                if(existe != NULL) {
+                    for(j = 0; j <strlen(existe->reg->codHuffman); j++) {
+                        vetBin[TLvet++] = existe->reg->codHuffman[j] - '0';
+                    }
+                }
+                TL = 0;
+            }
+            vetBin[TLvet++] = 0;
+        }
+        i++;
+    }
+
     if(TL > 0) {
-		palavra[TL] = '\0';
-		existe = buscaPalavraEmTabela(tabela, palavra);
-		if(existe != NULL) {
-			j = 0;
-			while(j < strlen(existe->reg->codHuffman)) {
-				vetBin[TLvet] = existe->reg->codHuffman[j] - '0';
-				TLvet++;
-				j++;
-			}
-		}
-	}
+        palavra[TL] = '\0';
+        existe = buscaPalavraEmTabela(tabela, palavra);
+        if(existe != NULL) {
+            for(j = 0; j < strlen(existe->reg->codHuffman); j++) {
+                vetBin[TLvet++] = existe->reg->codHuffman[j] - '0';
+            }
+        }
+    }
 
     i = 0;
     while (i < TLvet) {
