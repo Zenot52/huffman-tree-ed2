@@ -6,71 +6,99 @@
 
 #include "./TAD/arvore.h"
 
-Arvh *criaGalho() {
-    Arvh *novoNo = (Arvh*)malloc(sizeof(Arvh));
-    novoNo->simbolo = -1;
-    novoNo->freq = -1;
-    novoNo->esq = novoNo->dir = NULL;
-    return novoNo;
-}
-
-Arvh *criaFolha(char simbolo) {
-    Arvh *novoNo = (Arvh*)malloc(sizeof(Arvh)); 
-    novoNo->simbolo = simbolo;
-    novoNo->freq = -1;
-    novoNo->esq = novoNo->dir = NULL;
-    return novoNo;
-}
-
-void recriaArvore(Arvh **tree, Reg registro) {
-    int i = 0;
-    Arvh atual;
-
-    if(*tree == NULL) {
-        *tree = criaGalho();
-    }
-    else {
-        atual = *tree;
-        while(i < strlen(registro.codHuffman)) {
-            if(registro.codHuffman[i] == '1') {
-                if(i == strlen(registro.codHuffman) - 1) {
-                    atual->dir = criaFolha(registro.simbolo);
-                }else{
-                    if(atual->dir == NULL) {
-                        atual->dir = criaGalho();
-                        atual = atual->dir;
-                    }
-                }
+void recriaArvore(Arvh **raiz, char *codigo, int simbolo)
+{
+    Arvh *atual = *raiz;
+    int i;
+    for (i = 0; codigo[i] != '\0'; i++)
+    {
+        if (codigo[i] == '0')
+        {
+            if (atual->esq == NULL)
+            {
+                atual->esq = criaNoAvrh(-1, 0);
             }
-            else { // código será 0
-                if(i == strlen(registro.codHuffman) - 1) {
-                    atual->esq = criaFolha(registro.simbolo);
-                }else{
-                    if(atual->esq == NULL) {
-                        atual->esq = criaGalho();
-                        atual = atual->esq;
-                    }
-                }
+            atual = atual->esq;
+        }
+        else if (codigo[i] == '1')
+        {
+            if (atual->dir == NULL)
+            {
+                atual->dir = criaNoAvrh(-1, 0);
             }
-            i++;
+            atual = atual->dir;
         }
     }
+    atual->simbolo = simbolo;
+}
+/*
+void printArvore(Arvh *nodo, int n) {
+    int i;
+    if (nodo != NULL) {
+    	
+        printArvore(nodo->dir, n+1);
+        for (i = 0; i < 8*n; i++)
+            printf(" ");
+        textcolor(n+2);
+        printf("(%d, %d)\n", nodo->simbolo, nodo->freq);
+        printArvore(nodo->esq, n+1);
+    }
+}
+*/
+
+void decode(Arvh *raiz, FILE *recordFile){
+	FILE *encodedFile = fopen("outCode.dat", "rb");
+    Arvh *aux = raiz;
+    unsigned char byte;
+    char bit;
+    int i;
+    Reg registro;
+    printf("Frase decodificada: ");
+    while(fread(&byte, sizeof(byte), 1, encodedFile)){
+        for (i = 7; i >= 0; i--)
+        {
+            bit = (byte >> i) & 1; // pega a comparacao (AND bit a bit) entre o deslocamento do bit na pos i e 1 (sempre resultando no valor do bit i)
+            if (bit == 0)
+                aux = aux->esq;
+            else
+                aux = aux->dir;
+            if (aux->simbolo != -1) //achou
+            {
+                
+                rewind(recordFile);
+
+                fread(&registro, sizeof(Reg), 1, recordFile);
+                while(!feof(recordFile) && registro.simbolo != aux->simbolo)
+                    fread(&registro, sizeof(Reg), 1, recordFile);
+
+                if(registro.simbolo == aux->simbolo){//achou a palavra
+                    printf("%s",registro.palavra);
+                }
+                aux = raiz;
+            }
+        }
+    }
+    fclose(encodedFile);
 }
 
 int main() {
-    FILE *encodedFile = fopen("outCode.dat", "rb");
     FILE *recordFile = fopen("record.dat", "rb");
     Reg registro;
-    Arvh *tree = NULL;
+    Arvh *tree = criaNoAvrh(-1, 0);
 
     fread(&registro, sizeof(Reg), 1, recordFile);
     while(!feof(recordFile)) {
-        recriaArvore(&tree, registro);
+        recriaArvore(&tree, registro.codHuffman,registro.simbolo);
 
         fread(&registro, sizeof(Reg), 1, recordFile);
     }
 
-    fclose(encodedFile);
+    rewind(recordFile);
+    //printArvore(tree,0);
+    decode(tree, recordFile);
+	
+
+	
     fclose(recordFile);
     return 0;
 }
