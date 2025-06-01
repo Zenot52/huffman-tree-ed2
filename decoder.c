@@ -52,15 +52,21 @@ void decode(Arvh *raiz, FILE *recordFile){
     unsigned char byte;
     int i,bit;
     Reg registro;
+    char codigo[200]; codigo[0] = '\0';
     printf("Frase decodificada: ");
     while(fread(&byte, sizeof(byte), 1, encodedFile)){
         for (i = 7; i >= 0; i--)
         {
             bit = (byte >> i) & 1;
-			if (bit == 0)
-                aux = aux->esq;
-            else
-                aux = aux->dir;
+			if (bit == 0){
+				aux = aux->esq;
+				strcat(codigo,"0");
+			}
+            else{
+            	aux = aux->dir;
+            	strcat(codigo,"1");
+			}
+                
             if (aux->simbolo != -1) //achou
             {
                 
@@ -77,6 +83,7 @@ void decode(Arvh *raiz, FILE *recordFile){
             }
         }
     }
+    printf("\nCodigo da frase: %s\n",codigo);
     fclose(encodedFile);
 }
 
